@@ -9,7 +9,7 @@ export function formatDuration(sec: number): string {
 export function formatResultText(result: BattleResult): string {
   const winners = result.ranking.filter((r) => r.winner)
   const lines = [
-    `號碼大亂鬥結果（${result.total} 人取 ${result.settings.winners} 名，seed ${result.seed}）`,
+    `抽獎大亂鬥結果（${result.total} 人取 ${result.settings.winners} 名，seed ${result.seed}）`,
     ...winners.map(
       (r) => `第 ${r.rank} 名：${r.label}（${CLASSES[r.classId].name}，${r.kills} 殺）`,
     ),

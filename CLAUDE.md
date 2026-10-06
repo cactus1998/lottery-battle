@@ -1,4 +1,4 @@
-# lottery-battle（號碼大亂鬥）
+# lottery-battle（抽獎大亂鬥）
 
 純娛樂的網頁抽獎：每個參加號碼是一個隨機職業的像素小人偶，在競技場 RTS 式自動混戰，最後存活者得獎。純前端（Vite + React 19 + TypeScript），部署到 `https://kentfolio.dev/lottery-battle/`。總規格見 `docs/PRD-lottery-battle.md`。
 

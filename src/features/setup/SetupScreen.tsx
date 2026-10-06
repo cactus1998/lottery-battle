@@ -44,7 +44,7 @@ export function SetupScreen() {
     <section className={styles.screen} aria-labelledby="setup-title">
       <header className={styles.hero}>
         <h1 id="setup-title" ref={headingRef} tabIndex={-1}>
-          號碼大亂鬥
+          抽獎大亂鬥
         </h1>
         <p>每個號碼都是一個小人偶，隨機抽到職業後丟進競技場混戰，最後站著的就是得獎者。</p>
       </header>
