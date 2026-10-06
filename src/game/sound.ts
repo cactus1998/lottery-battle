@@ -1,5 +1,14 @@
 export type SoundName =
-  'hit' | 'crit' | 'kill' | 'arrow' | 'fireball' | 'explode' | 'spin' | 'overtime' | 'finish'
+  | 'hit'
+  | 'crit'
+  | 'kill'
+  | 'arrow'
+  | 'fireball'
+  | 'explode'
+  | 'spin'
+  | 'overtime'
+  | 'climax'
+  | 'finish'
 
 interface ToneSpec {
   freq: number
@@ -18,6 +27,7 @@ const TONES: Record<SoundName, ToneSpec> = {
   explode: { freq: 120, endFreq: 40, duration: 0.25, type: 'sawtooth', gain: 0.06 },
   spin: { freq: 500, endFreq: 250, duration: 0.12, type: 'triangle', gain: 0.04 },
   overtime: { freq: 140, endFreq: 90, duration: 0.6, type: 'triangle', gain: 0.08 },
+  climax: { freq: 90, endFreq: 45, duration: 0.9, type: 'sine', gain: 0.18 },
   finish: { freq: 523, endFreq: 1046, duration: 0.5, type: 'triangle', gain: 0.08 },
 }
 
@@ -31,6 +41,7 @@ const MIN_INTERVAL: Record<SoundName, number> = {
   explode: 90,
   spin: 90,
   overtime: 0,
+  climax: 0,
   finish: 0,
 }
 

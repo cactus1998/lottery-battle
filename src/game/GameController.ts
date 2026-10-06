@@ -2,8 +2,10 @@ import { DT } from '@/engine/config'
 import type { ClassId } from '@/engine/classes'
 import type { BattleConfig, BattleEvent, BattleResult, World } from '@/engine/types'
 import { createWorld, getResult, step, stepUntilEnd } from '@/engine/world'
+import { Camera, frameAlive } from '@/render/camera'
 import { Effects } from '@/render/effects'
 import { Renderer } from '@/render/renderer'
+import { DRAMA_TIME_SCALE, type DramaLevel, dramaLevel } from './drama'
 import type { SoundPlayer } from './sound'
 
 export type Speed = 1 | 2 | 4
@@ -36,6 +38,8 @@ export interface HudSnapshot {
   damageMultiplier: number
   killFeed: KillFeedItem[]
   leaders: Leader[]
+  /** 結尾戲劇效果階段 */
+  drama: DramaLevel
 }
 
 export interface GameControllerOptions {
@@ -51,6 +55,13 @@ export interface GameControllerOptions {
 /** HUD 快照最多每 100ms 更新一次（10Hz） */
 const HUD_INTERVAL_MS = 100
 const KILL_FEED_SIZE = 5
+/** 最後一擊後停格（秒），接著慢動作（秒）與其速度倍率 */
+const HIT_STOP_SEC = 0.25
+const SLOWMO_SEC = 1.5
+const SLOWMO_SCALE = 0.3
+/** 遊戲速度倍率變化的平滑速度 */
+const TIME_SCALE_RATE = 4
+
 /** 分頁切回前景時，單幀最多補算這麼多秒，避免一次跑幾百個 tick 卡住 */
 const MAX_FRAME_SEC = 0.25
 
@@ -65,6 +76,12 @@ export class GameController {
   readonly world: World
   private readonly opts: GameControllerOptions
   private readonly effects: Effects
+  private readonly camera = new Camera()
+  private drama: DramaLevel = 'none'
+  /** 目前套用的戲劇速度倍率（平滑靠近 DRAMA_TIME_SCALE） */
+  private timeScale = 1
+  /** 分出勝負後經過的真實秒數，-1 表示尚未結束 */
+  private sinceFinish = -1
   private renderer: Renderer | null = null
   private readonly listeners = new Set<() => void>()
   private snapshot: HudSnapshot
@@ -187,19 +204,25 @@ export class GameController {
 
     if (!this.paused) {
       if (!this.world.finished) {
-        this.accumulator += elapsed * this.speed
+        // 戲劇速度倍率平滑變化，避免突然變慢
+        const targetScale = DRAMA_TIME_SCALE[this.drama]
+        this.timeScale +=
+          (targetScale - this.timeScale) * (1 - Math.exp(-elapsed * TIME_SCALE_RATE))
+        this.accumulator += elapsed * this.speed * this.timeScale
         while (this.accumulator >= DT && !this.world.finished) {
           step(this.world)
           this.consumeEvents()
           this.accumulator -= DT
         }
+        this.updateDrama()
         if (this.world.finished) {
           this.accumulator = 0
           this.result = getResult(this.world)
           this.scheduleFinish()
         }
       }
-      this.effects.update(elapsed)
+      this.effects.update(elapsed * this.effectTimeScale(elapsed))
+      this.camera.update(elapsed)
     }
 
     this.render(this.world.finished ? 1 : this.accumulator / DT)
@@ -210,7 +233,50 @@ export class GameController {
   }
 
   private render(alpha: number): void {
-    this.renderer?.draw(this.world, alpha, this.effects, this.showFps ? this.fps : null)
+    const camera = this.opts.reducedMotion ? null : this.camera
+    this.renderer?.draw(this.world, alpha, this.effects, camera, this.showFps ? this.fps : null)
+  }
+
+  /** 最後一擊後：先停格，再慢動作，之後恢復正常 */
+  private effectTimeScale(elapsed: number): number {
+    if (this.sinceFinish < 0) return 1
+    this.sinceFinish += elapsed
+    if (this.opts.reducedMotion) return 1
+    if (this.sinceFinish < HIT_STOP_SEC) return 0
+    if (this.sinceFinish < HIT_STOP_SEC + SLOWMO_SEC) return SLOWMO_SCALE
+    return 1
+  }
+
+  /** 依目前戰況切換戲劇階段：鏡頭、暗角、音效、橫幅 */
+  private updateDrama(): void {
+    const next = dramaLevel(this.world)
+    const prev = this.drama
+    this.drama = next
+    if (next === 'final' || next === 'matchPoint') {
+      this.camera.follow(frameAlive(this.world))
+      this.effects.vignetteTarget = next === 'matchPoint' ? 1 : 0.6
+    }
+    if (prev === 'none' && (next === 'final' || next === 'matchPoint')) {
+      this.effects.showBanner('⚔️ 決戰時刻！')
+      this.opts.sound?.play('climax')
+    }
+    if (prev !== 'finished' && next === 'finished') {
+      this.sinceFinish = 0
+      this.timeScale = 1
+      this.effects.vignetteTarget = 0.4
+      const focus = this.finalFocus()
+      if (focus) this.camera.punch(focus.x, focus.y)
+    }
+    if (prev !== next) this.emit()
+  }
+
+  /** 最後一擊鏡頭對準出手者（被毒或沒有出手者時對準倒下的人） */
+  private finalFocus(): { x: number; y: number } | null {
+    const { units, deathOrder } = this.world
+    const victim = units[deathOrder.at(-1) ?? -1]
+    if (!victim) return null
+    const killer = units.find((u) => u.alive && u.target === victim.id)
+    return killer ? { x: (killer.x + victim.x) / 2, y: (killer.y + victim.y) / 2 } : victim
   }
 
   private trackFps(now: number): void {
@@ -264,7 +330,7 @@ export class GameController {
     this.finishTimer = setTimeout(() => {
       this.finishTimer = null
       this.notifyFinish()
-    }, this.opts.finishDelayMs ?? 1800)
+    }, this.opts.finishDelayMs ?? 3500)
   }
 
   private notifyFinish(): void {
@@ -298,6 +364,7 @@ export class GameController {
       damageMultiplier: world.damageMultiplier,
       killFeed: this.killFeed,
       leaders,
+      drama: this.drama,
     }
   }
 
@@ -312,6 +379,7 @@ export class GameController {
       prev.finished === next.finished &&
       prev.alive === next.alive &&
       prev.damageMultiplier === next.damageMultiplier &&
+      prev.drama === next.drama &&
       prev.killFeed === next.killFeed
     ) {
       return

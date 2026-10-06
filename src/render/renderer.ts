@@ -1,5 +1,6 @@
 import { CONFIG } from '@/engine/config'
 import type { World } from '@/engine/types'
+import { type Camera, DEFAULT_CENTER } from './camera'
 import type { Effects } from './effects'
 import {
   buildGrass,
@@ -103,13 +104,23 @@ export class Renderer {
     return w
   }
 
-  draw(world: World, alpha: number, effects: Effects, fps: number | null): void {
+  draw(
+    world: World,
+    alpha: number,
+    effects: Effects,
+    camera: Camera | null,
+    fps: number | null,
+  ): void {
     const ctx = this.ctx
     if (!ctx || this.width === 0) return
 
-    const scale = Math.min(this.width / VIEW_W, this.height / VIEW_H)
-    const offsetX = (this.width - VIEW_W * scale) / 2 + SIDE_PAD * scale
-    const offsetY = (this.height - VIEW_H * scale) / 2 + TOP_PAD * scale
+    // 鏡頭：zoom = 1 且中心在預設位置時，整個場地剛好放進畫面
+    const zoom = camera?.zoom ?? 1
+    const camX = camera?.x ?? DEFAULT_CENTER.x
+    const camY = camera?.y ?? DEFAULT_CENTER.y
+    const scale = Math.min(this.width / VIEW_W, this.height / VIEW_H) * zoom
+    const offsetX = this.width / 2 - camX * scale
+    const offsetY = this.height / 2 - camY * scale
     const shakeX = effects.shake > 0 ? (Math.random() - 0.5) * effects.shake : 0
     const shakeY = effects.shake > 0 ? (Math.random() - 0.5) * effects.shake : 0
 
@@ -139,6 +150,7 @@ export class Renderer {
     this.drawParticles(ctx, effects, scale)
 
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0)
+    this.drawOverlays(ctx, effects)
     if (effects.bannerTime > 0) this.drawBanner(ctx, effects.banner, effects.bannerTime)
     if (fps !== null) {
       ctx.font = '12px ui-monospace, monospace'
@@ -344,6 +356,54 @@ export class Renderer {
       ctx.fillText(text, f.x, f.y)
     }
     ctx.globalAlpha = 1
+  }
+
+  /** 畫面座標的疊加效果：決戰暗角、最後一擊閃光與大字 */
+  private drawOverlays(ctx: CanvasRenderingContext2D, effects: Effects): void {
+    const w = this.width
+    const h = this.height
+    if (effects.vignette > 0.01) {
+      const g = ctx.createRadialGradient(
+        w / 2,
+        h / 2,
+        Math.min(w, h) * 0.3,
+        w / 2,
+        h / 2,
+        Math.max(w, h) * 0.75,
+      )
+      g.addColorStop(0, 'rgba(0,0,0,0)')
+      g.addColorStop(1, `rgba(40,0,0,${(0.65 * effects.vignette).toFixed(3)})`)
+      ctx.fillStyle = g
+      ctx.fillRect(0, 0, w, h)
+    }
+    if (effects.flash > 0) {
+      ctx.fillStyle = `rgba(255,255,255,${(effects.flash * 0.85).toFixed(3)})`
+      ctx.fillRect(0, 0, w, h)
+    }
+    if (effects.finalTime > 0) {
+      // 前 0.25 秒從大縮到正常，最後 0.6 秒淡出
+      const shown = 2.6 - effects.finalTime
+      const pop = shown < 0.25 ? 1.6 - (shown / 0.25) * 0.6 : 1
+      ctx.globalAlpha = Math.min(1, effects.finalTime / 0.6)
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      const size = Math.max(28, Math.min(w, h) * 0.09) * pop
+      ctx.font = `900 ${size}px system-ui, sans-serif`
+      ctx.lineWidth = size * 0.12
+      ctx.strokeStyle = 'rgba(0,0,0,0.85)'
+      ctx.strokeText(effects.finalTitle, w / 2, h * 0.24)
+      ctx.fillStyle = '#ffd34d'
+      ctx.fillText(effects.finalTitle, w / 2, h * 0.24)
+      if (effects.finalSubtitle) {
+        const sub = Math.max(14, size * 0.38)
+        ctx.font = `800 ${sub}px system-ui, sans-serif`
+        ctx.lineWidth = sub * 0.15
+        ctx.strokeText(effects.finalSubtitle, w / 2, h * 0.24 + size * 0.8)
+        ctx.fillStyle = '#ffffff'
+        ctx.fillText(effects.finalSubtitle, w / 2, h * 0.24 + size * 0.8)
+      }
+      ctx.globalAlpha = 1
+    }
   }
 
   private drawBanner(ctx: CanvasRenderingContext2D, text: string, remaining: number): void {

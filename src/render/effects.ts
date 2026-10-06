@@ -48,6 +48,17 @@ export class Effects {
   shake = 0
   banner = ''
   bannerTime = 0
+  /** 白色閃光強度 0–1 */
+  flash = 0
+  /** 決戰時畫面四周變暗的強度 0–1（平滑變化） */
+  vignette = 0
+  vignetteTarget = 0
+  /** 最後一擊大字 */
+  finalTitle = ''
+  finalSubtitle = ''
+  finalTime = 0
+  /** 本 tick 最近一次擊殺，最後一擊特效用 */
+  private lastKill: { killer: number | null; victim: number } | null = null
 
   private readonly reducedMotion: boolean
 
@@ -69,6 +80,7 @@ export class Effects {
       case 'kill': {
         const victim = world.units[event.victim]
         if (!victim) return
+        this.lastKill = { killer: event.killer, victim: event.victim }
         this.burst(victim.x, victim.y - 8, `hsl(${victim.hue.toFixed(0)} 70% 60%)`, 14)
         this.burst(victim.x, victim.y - 8, '#ffffff', 4)
         if (!this.reducedMotion) this.shake = Math.min(this.shake + 2.5, 8)
@@ -91,6 +103,7 @@ export class Effects {
         this.showBanner(`延長賽！傷害 ×${event.multiplier}`)
         break
       case 'finish':
+        this.finalBlow(world)
         for (const u of world.units) {
           if (u.alive) this.burst(u.x, u.y - 10, '#ffd34d', 30)
         }
@@ -98,6 +111,30 @@ export class Effects {
       case 'shoot':
         break
     }
+  }
+
+  /** 最後一擊：衝擊波、大量粒子、閃光、強震與大字 */
+  private finalBlow(world: World): void {
+    const kill = this.lastKill
+    const victim = kill ? world.units[kill.victim] : undefined
+    const killer = kill?.killer != null ? world.units[kill.killer] : undefined
+    if (victim) {
+      this.addRing(victim.x, victim.y - 10, 90, '#ffffff', 0.6)
+      this.addRing(victim.x, victim.y - 10, 160, '#ffd34d', 0.9)
+      this.burst(victim.x, victim.y - 10, '#ffffff', 40, 220)
+      this.burst(victim.x, victim.y - 10, `hsl(${victim.hue.toFixed(0)} 80% 60%)`, 40, 260)
+    }
+    if (!this.reducedMotion) {
+      this.flash = 1
+      this.shake = 16
+    }
+    this.finalTitle = '最後一擊！'
+    this.finalSubtitle = victim
+      ? killer
+        ? `${killer.label} 擊倒 ${victim.label}`
+        : `${victim.label} 倒下了`
+      : ''
+    this.finalTime = 2.6
   }
 
   showBanner(text: string): void {
@@ -163,6 +200,9 @@ export class Effects {
       if (r.life <= 0) this.rings.splice(i, 1)
     }
     this.shake = Math.max(0, this.shake - dt * 20)
+    this.flash = Math.max(0, this.flash - dt * 2.5)
+    this.finalTime = Math.max(0, this.finalTime - dt)
+    this.vignette += (this.vignetteTarget - this.vignette) * (1 - Math.exp(-dt * 3))
     this.bannerTime = Math.max(0, this.bannerTime - dt)
   }
 }

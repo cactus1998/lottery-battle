@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { BattleConfig, BattleResult } from '@/engine/types'
+import { killUnit } from '@/engine/systems/death'
 import { createWorld, stepUntilEnd } from '@/engine/world'
 import { GameController, type GameControllerOptions } from './GameController'
 
@@ -140,5 +141,19 @@ describe('GameController', () => {
     const feed = controller.getSnapshot().killFeed
     expect(feed.length).toBeGreaterThan(0)
     expect(feed.length).toBeLessThanOrEqual(5)
+  })
+
+  it('slows the simulation down during the final showdown', () => {
+    const normal = makeController().controller
+    const showdown = makeController().controller
+    // 只剩得獎人數 + 2 人：進入決戰時刻
+    for (let i = 0; i < 8; i++) killUnit(showdown.world, i, null)
+    normal.start()
+    showdown.start()
+    const t0 = normal.world.tick
+    const s0 = showdown.world.tick
+    runFrames(120)
+    expect(showdown.getSnapshot().drama).not.toBe('none')
+    expect(showdown.world.tick - s0).toBeLessThan((normal.world.tick - t0) * 0.85)
   })
 })

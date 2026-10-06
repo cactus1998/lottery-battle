@@ -34,6 +34,10 @@ export function BattleHud({ hud }: BattleHudProps) {
 
       {hud.finished ? (
         <p className={styles.banner}>勝負已分！</p>
+      ) : hud.drama === 'matchPoint' ? (
+        <p className={`${styles.banner} ${styles.zone}`}>🔥 賽點！</p>
+      ) : hud.drama === 'final' ? (
+        <p className={`${styles.banner} ${styles.zone}`}>⚔️ 決戰時刻</p>
       ) : hud.damageMultiplier > 1 ? (
         <p className={`${styles.banner} ${styles.zone}`}>延長賽：傷害 ×{hud.damageMultiplier}</p>
       ) : null}
