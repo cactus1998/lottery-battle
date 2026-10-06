@@ -173,6 +173,21 @@
   color: var(--text-muted);
 }
 
+.classItem .skill {
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.skillTag {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 6px;
+  font-size: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+}
+
 .prizes {
   display: grid;
   gap: 8px;

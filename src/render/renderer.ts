@@ -1,4 +1,5 @@
 import { CONFIG } from '@/engine/config'
+import { CLASSES } from '@/engine/classes'
 import type { World } from '@/engine/types'
 import { type Camera, DEFAULT_CENTER } from './camera'
 import type { Effects } from './effects'
@@ -35,8 +36,16 @@ const COLORS = {
   winner: '#ffd34d',
   crit: '#ffd34d',
   damage: '#ffffff',
+  active: '#7fe3ff',
+  passive: '#c9a8ff',
+  stun: '#ffe066',
   arrow: '#6b4a2a',
   arrowHead: '#dfe6ee',
+  chargedArrow: '#e0a420',
+  chargedArrowHead: '#fff1a8',
+  missile: '#b48cff',
+  missileTrail: '#7d5cff',
+  manaShield: 'rgba(127,184,255,0.55)',
 }
 
 /** 受擊後閃白的 tick 數 */
@@ -275,6 +284,16 @@ export class Renderer {
         ctx.fillRect(bx, by, barW * ratio, barH)
       }
 
+      if (u.stunTimer > 0) this.drawStun(ctx, x, top - px * 3, px, tick)
+      // 魔法盾可用時身上一圈淡藍光
+      if (u.shieldCooldown <= 0 && CLASSES[u.classId].passiveSkill === 'manaShield') {
+        ctx.strokeStyle = COLORS.manaShield
+        ctx.lineWidth = px * 0.8
+        ctx.beginPath()
+        ctx.arc(x, y - size * 0.3, size * 0.55, 0, Math.PI * 2)
+        ctx.stroke()
+      }
+
       // 號碼
       const label = u.label.length > 6 ? `${u.label.slice(0, 5)}…` : u.label
       const ly = Math.min(top + size, ARENA + BOTTOM_PAD - fontSize)
@@ -285,6 +304,24 @@ export class Renderer {
       ctx.fillText(label, lx + px * 0.5, ly + px * 0.5)
       ctx.fillStyle = COLORS.label
       ctx.fillText(label, lx, ly)
+    }
+  }
+
+  /** 暈眩：頭上三顆繞圈的星星 */
+  private drawStun(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    px: number,
+    tick: number,
+  ): void {
+    ctx.fillStyle = COLORS.stun
+    const s = px * 1.6
+    for (let k = 0; k < 3; k++) {
+      const a = tick * 0.25 + (k * Math.PI * 2) / 3
+      const sx = x + Math.cos(a) * px * 4
+      const sy = y + Math.sin(a) * px * 1.5
+      ctx.fillRect(sx - s / 2, sy - s / 2, s, s)
     }
   }
 
@@ -305,16 +342,38 @@ export class Renderer {
       const ux = dx / len
       const uy = dy / len
 
-      if (p.kind === 'arrow') {
-        const tail = px * 7
-        ctx.strokeStyle = COLORS.arrow
-        ctx.lineWidth = px * 0.9
+      if (p.kind === 'arrow' || p.kind === 'chargedArrow') {
+        // 蓄力箭：更長、更粗、金色
+        const charged = p.kind === 'chargedArrow'
+        const tail = px * (charged ? 11 : 7)
+        ctx.strokeStyle = charged ? COLORS.chargedArrow : COLORS.arrow
+        ctx.lineWidth = px * (charged ? 1.6 : 0.9)
         ctx.beginPath()
         ctx.moveTo(x - ux * tail, y - uy * tail)
         ctx.lineTo(x, y)
         ctx.stroke()
-        ctx.fillStyle = COLORS.arrowHead
-        ctx.fillRect(x - px, y - px, px * 2, px * 2)
+        const head = charged ? px * 1.5 : px
+        ctx.fillStyle = charged ? COLORS.chargedArrowHead : COLORS.arrowHead
+        ctx.fillRect(x - head, y - head, head * 2, head * 2)
+      } else if (p.kind === 'missile') {
+        // 魔法箭：紫色光球加拖尾
+        const r = px * 2.2
+        ctx.fillStyle = COLORS.missileTrail
+        for (let k = 1; k <= 3; k++) {
+          ctx.globalAlpha = 0.5 - k * 0.12
+          ctx.beginPath()
+          ctx.arc(x - ux * r * k * 1.6, y - uy * r * k * 1.6, r * (1 - k * 0.2), 0, Math.PI * 2)
+          ctx.fill()
+        }
+        ctx.globalAlpha = 1
+        ctx.fillStyle = COLORS.missile
+        ctx.beginPath()
+        ctx.arc(x, y, r, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.fillStyle = '#ffffff'
+        ctx.beginPath()
+        ctx.arc(x, y, r * 0.45, 0, Math.PI * 2)
+        ctx.fill()
       } else {
         const r = px * 3
         ctx.globalAlpha = 0.35
@@ -348,11 +407,12 @@ export class Renderer {
     ctx.textBaseline = 'middle'
     for (const f of effects.floaters) {
       ctx.globalAlpha = Math.max(0, f.life / f.maxLife)
-      ctx.font = `800 ${f.crit ? base * 1.4 : base}px system-ui, sans-serif`
-      const text = f.crit ? `${f.text}!` : f.text
+      const big = f.style !== 'damage'
+      ctx.font = `800 ${big ? base * 1.4 : base}px system-ui, sans-serif`
+      const text = f.style === 'crit' ? `${f.text}!` : f.text
       ctx.fillStyle = 'rgba(0,0,0,0.7)'
       ctx.fillText(text, f.x + 1.5, f.y + 1.5)
-      ctx.fillStyle = f.crit ? COLORS.crit : COLORS.damage
+      ctx.fillStyle = COLORS[f.style]
       ctx.fillText(text, f.x, f.y)
     }
     ctx.globalAlpha = 1

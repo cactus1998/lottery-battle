@@ -66,6 +66,10 @@ export function createWorld({ entrants, settings, seed }: BattleConfig): World {
       deathTick: -1,
       lastHitTick: -100,
       lastAttackTick: -100,
+      stunTimer: 0,
+      mongooseCooldown: 0,
+      shieldCooldown: 0,
+      fury: false,
     }
   })
 

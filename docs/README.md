@@ -23,3 +23,4 @@
 | [PRD-pixel-sprites.md](PRD-pixel-sprites.md)     | 18 像素小人偶   | 完成   |
 | [PRD-deploy.md](PRD-deploy.md)                   | 15 部署         | 完成   |
 | [PRD-drama.md](PRD-drama.md)                     | 19 結尾戲劇效果 | 完成   |
+| [PRD-class-skills.md](PRD-class-skills.md)       | 20 職業技能     | 完成   |

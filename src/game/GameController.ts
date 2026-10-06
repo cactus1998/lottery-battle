@@ -306,7 +306,16 @@ export class GameController {
     else if (event.type === 'shoot') sound.play(event.kind === 'arrow' ? 'arrow' : 'fireball')
     else if (event.type === 'explode') sound.play('explode')
     else if (event.type === 'spin') sound.play('spin')
-    else if (event.type === 'overtime') sound.play('overtime')
+    // 旋風斬已由 spin 播音，其餘明顯的技能借用爆擊音效
+    else if (
+      event.type === 'skill' &&
+      (event.skill === 'shieldBash' ||
+        event.skill === 'execute' ||
+        event.skill === 'chargedShot' ||
+        event.skill === 'manaShield')
+    ) {
+      sound.play('crit')
+    } else if (event.type === 'overtime') sound.play('overtime')
     else if (event.type === 'finish') sound.play('finish')
   }
 

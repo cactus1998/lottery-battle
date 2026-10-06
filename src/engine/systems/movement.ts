@@ -10,13 +10,14 @@ const LIMIT_MAX = CONFIG.arenaSize - CONFIG.unitRadius
  * 移動：
  * - 近戰走向目標，停在攻擊距離內一點點，避免在邊界來回抖動。
  * - 遠程走到射程內就停下；目標太靠近（retreatRange 內）時往反方向後退。
+ * - 暈眩中不主動移動（仍會被碰撞分離推開）。
  * 之後做一次簡單的碰撞分離，避免小人疊在一起。
  */
 export function movementSystem(world: World): void {
   const { units } = world
 
   for (const u of units) {
-    if (!u.alive) continue
+    if (!u.alive || u.stunTimer > 0) continue
     const t = u.target >= 0 ? units[u.target] : undefined
     if (!t?.alive) continue
     const stats = CLASSES[u.classId]

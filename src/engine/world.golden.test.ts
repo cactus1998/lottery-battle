@@ -17,24 +17,24 @@ it('produces the recorded ranking for seed 20261006', () => {
     .toMatchInlineSnapshot(`
       {
         "order": [
-          "2:swordsman",
-          "12:knight",
-          "11:swordsman",
           "10:knight",
-          "1:swordsman",
-          "13:archer",
           "8:assassin",
+          "12:knight",
+          "2:swordsman",
           "6:assassin",
-          "7:archer",
-          "16:knight",
-          "4:mage",
-          "15:assassin",
-          "14:mage",
           "3:archer",
+          "13:archer",
+          "4:mage",
+          "7:archer",
+          "11:swordsman",
+          "1:swordsman",
+          "14:mage",
+          "16:knight",
+          "15:assassin",
           "5:mage",
           "9:archer",
         ],
-        "ticks": 1378,
+        "ticks": 1178,
       }
     `)
 })

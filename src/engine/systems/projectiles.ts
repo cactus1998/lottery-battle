@@ -1,13 +1,13 @@
 import { CONFIG, DT } from '../config'
 import type { World } from '../types'
-import { applyDamage, applySplash } from './damage'
+import { applyDamage, applySplash, HIT_PIERCE, HIT_SINGLE } from './damage'
 
 const HIT_RADIUS = CONFIG.unitRadius
 
 /**
  * 投射物：追蹤目標目前位置飛行，抵達時命中。
  * 目標在飛行途中死亡時，飛到最後已知位置：火球照樣爆炸，箭矢直接消失。
- * 依物件池索引順序結算，維持決定性。回傳 true 表示對戰已結束。
+ * 主要目標可被閃避 / 格擋，爆炸波及不行。依物件池索引順序結算，維持決定性。回傳 true 表示對戰已結束。
  */
 export function projectileSystem(world: World): boolean {
   const { units, projectiles } = world
@@ -44,13 +44,18 @@ export function projectileSystem(world: World): boolean {
         y: p.y,
         radius: p.splashRadius,
       })
-      if (targetAlive && applyDamage(world, p.owner, p.target, p.damage, p.crit)) return true
+      if (targetAlive && applyDamage(world, p.owner, p.target, p.damage, p.crit, HIT_SINGLE)) {
+        return true
+      }
       if (
         applySplash(world, p.owner, p.x, p.y, p.splashRadius, p.damage * p.splashRatio, p.target)
       ) {
         return true
       }
-    } else if (targetAlive && applyDamage(world, p.owner, p.target, p.damage, p.crit)) {
+    } else if (
+      targetAlive &&
+      applyDamage(world, p.owner, p.target, p.damage, p.crit, p.pierce ? HIT_PIERCE : HIT_SINGLE)
+    ) {
       return true
     }
   }

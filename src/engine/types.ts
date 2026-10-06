@@ -1,4 +1,4 @@
-import type { ClassId } from './classes'
+import type { ClassId, SkillId } from './classes'
 import type { Rng } from './rng'
 import type { SpatialGrid } from './spatialGrid'
 
@@ -46,9 +46,17 @@ export interface Unit {
   deathTick: number
   lastHitTick: number
   lastAttackTick: number
+  /** 暈眩剩餘秒數，> 0 時不移動、不出手、冷卻不倒數 */
+  stunTimer: number
+  /** 貓鼬冷卻剩餘秒數 */
+  mongooseCooldown: number
+  /** 魔法盾恢復剩餘秒數，<= 0 表示護盾可用 */
+  shieldCooldown: number
+  /** 戰意是否已啟動（只觸發一次事件） */
+  fury: boolean
 }
 
-export type ProjectileKind = 'arrow' | 'fireball'
+export type ProjectileKind = 'arrow' | 'chargedArrow' | 'fireball' | 'missile'
 
 /** 投射物放在物件池重用，active = false 的可再利用 */
 export interface Projectile {
@@ -68,6 +76,8 @@ export interface Projectile {
   crit: boolean
   splashRadius: number
   splashRatio: number
+  /** 魔法箭：無視護甲、不能被閃避 / 格擋 */
+  pierce: boolean
 }
 
 export type BattleEvent =
@@ -83,6 +93,8 @@ export type BattleEvent =
   | { type: 'shoot'; tick: number; attacker: number; kind: ProjectileKind }
   | { type: 'explode'; tick: number; x: number; y: number; radius: number }
   | { type: 'spin'; tick: number; attacker: number; radius: number }
+  /** 技能觸發：unit 是發動者（格擋、閃避、貓鼬、魔法盾是受擊者），x / y 是發動位置 */
+  | { type: 'skill'; tick: number; unit: number; skill: SkillId; x: number; y: number }
   | { type: 'overtime'; tick: number; multiplier: number }
   | { type: 'finish'; tick: number }
 

@@ -19,7 +19,7 @@ export function targetingSystem(world: World): void {
   }
 }
 
-/** 半徑內最近的遠程職業（弓箭手、法師）；同距離取索引小者，與格子內順序無關。 */
+/** 半徑內最近的遠程職業（遊俠、法師）；同距離取索引小者，與格子內順序無關。 */
 function nearestRanged(world: World, self: number, radius: number): number {
   const { units, grid, neighbors } = world
   const me = units[self]

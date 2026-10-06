@@ -1,3 +1,4 @@
+import { CLASSES, SKILL_NAMES, type SkillId } from '@/engine/classes'
 import type { BattleEvent, World } from '@/engine/types'
 
 /**
@@ -16,13 +17,16 @@ export interface Particle {
   size: number
 }
 
+/** 浮字樣式：一般傷害、爆擊、主動技能、被動技能 */
+export type FloaterStyle = 'damage' | 'crit' | 'active' | 'passive'
+
 export interface Floater {
   x: number
   y: number
   text: string
   life: number
   maxLife: number
-  crit: boolean
+  style: FloaterStyle
 }
 
 export interface Ring {
@@ -40,6 +44,16 @@ const MAX_RINGS = 80
 /** 存活人數超過這個值時，只顯示爆擊的傷害數字，避免畫面被數字淹沒 */
 const SHOW_ALL_DAMAGE_BELOW = 60
 const FIRE_COLORS = ['#ffcf4a', '#ff8a2a', '#ff5a1f', '#fff1a8']
+const DASH_COLOR = '#d8c48a'
+const SHIELD_COLOR = '#7fb8ff'
+/** 存活人數超過 SHOW_ALL_DAMAGE_BELOW 時仍顯示的技能浮字（主動技能、處決） */
+const ALWAYS_SHOWN_SKILLS: ReadonlySet<SkillId> = new Set([
+  'spin',
+  'shieldBash',
+  'chargedShot',
+  'magicMissile',
+  'execute',
+])
 
 export class Effects {
   readonly particles: Particle[] = []
@@ -72,7 +86,12 @@ export class Effects {
         const target = world.units[event.target]
         if (!target) return
         if (event.crit || world.aliveCount <= SHOW_ALL_DAMAGE_BELOW) {
-          this.addFloater(target.x, target.y - 30, String(event.damage), event.crit)
+          this.addFloater(
+            target.x,
+            target.y - 30,
+            String(event.damage),
+            event.crit ? 'crit' : 'damage',
+          )
         }
         if (event.crit && !this.reducedMotion) this.shake = Math.min(this.shake + 1.5, 6)
         break
@@ -99,6 +118,9 @@ export class Effects {
         if (u) this.addRing(u.x, u.y - 6, event.radius, '#e6edf3', 0.25)
         break
       }
+      case 'skill':
+        this.skill(event.unit, event.skill, event.x, event.y, world)
+        break
       case 'overtime':
         this.showBanner(`延長賽！傷害 ×${event.multiplier}`)
         break
@@ -109,6 +131,53 @@ export class Effects {
         }
         break
       case 'shoot':
+        break
+    }
+  }
+
+  /** 技能：頭上浮字（人多時只顯示主動技能），加上各技能專屬的光圈或粒子 */
+  private skill(unit: number, skill: SkillId, x: number, y: number, world: World): void {
+    const u = world.units[unit]
+    if (!u) return
+    if (world.aliveCount <= SHOW_ALL_DAMAGE_BELOW || ALWAYS_SHOWN_SKILLS.has(skill)) {
+      const active = CLASSES[u.classId].activeSkill === skill
+      this.addFloater(x, y - 46, `${SKILL_NAMES[skill]}！`, active ? 'active' : 'passive', 1.1)
+    }
+    switch (skill) {
+      case 'chargedShot':
+        this.addRing(u.x, u.y - 10, 18, '#ffd34d', 0.3)
+        break
+      case 'magicMissile':
+        this.burst(u.x, u.y - 12, '#c9a8ff', 6, 50)
+        break
+      case 'shieldBash': {
+        const t = world.units[u.target]
+        if (t) this.burst(t.x, t.y - 20, '#ffd34d', 8, 60)
+        break
+      }
+      case 'execute': {
+        const t = world.units[u.target]
+        if (t) this.addRing(t.x, t.y - 8, 40, '#ff4d6d', 0.4)
+        if (!this.reducedMotion) this.shake = Math.min(this.shake + 2, 8)
+        break
+      }
+      case 'mongoose':
+        // 事件座標是起點，unit 目前位置是終點
+        this.burst(x, y - 8, DASH_COLOR, 10, 60)
+        this.burst(u.x, u.y - 8, DASH_COLOR, 6, 40)
+        break
+      case 'manaShield':
+        this.addRing(u.x, u.y - 10, 26, SHIELD_COLOR, 0.4)
+        this.burst(u.x, u.y - 10, SHIELD_COLOR, 8, 70)
+        break
+      case 'fury':
+        this.addRing(u.x, u.y - 6, 30, '#ff4d4d', 0.5)
+        break
+      case 'block':
+      case 'dodge':
+        this.burst(x, y - 12, '#e6edf3', 5, 50)
+        break
+      default:
         break
     }
   }
@@ -142,9 +211,9 @@ export class Effects {
     this.bannerTime = 2.5
   }
 
-  private addFloater(x: number, y: number, text: string, crit: boolean): void {
+  private addFloater(x: number, y: number, text: string, style: FloaterStyle, life = 0.8): void {
     if (this.floaters.length >= MAX_FLOATERS) this.floaters.shift()
-    this.floaters.push({ x, y, text, crit, life: 0.8, maxLife: 0.8 })
+    this.floaters.push({ x, y, text, style, life, maxLife: life })
   }
 
   private addRing(x: number, y: number, radius: number, color: string, life: number): void {
