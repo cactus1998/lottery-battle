@@ -1,0 +1,73 @@
+.panel {
+  max-width: 640px;
+  margin: 24px auto 0;
+  display: grid;
+  gap: 10px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.header h2 {
+  font-size: 1.1rem;
+}
+
+.confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.item > button {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.seed {
+  font-family: var(--mono);
+}
+
+.winners {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
