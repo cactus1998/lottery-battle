@@ -78,4 +78,4 @@ flowchart LR
 - [x] AC-01：Given 號碼 1–50、得獎 3 人，When 開始對戰，Then 90 秒內（1x）結束並顯示 3 位得獎者與 50 列名次表。
 - [x] AC-02：Given 一場結束的對戰，When 按「重播」，Then 名次與擊殺數完全相同。
 - [x] AC-03：Given 300 人，When 對戰進行中，Then FPS ≥ 55。
-- [ ] AC-04：Given 部署在 `/lottery-battle/`，When 直接開啟網址，Then 資源全部正常載入。（build 產物路徑已確認帶 `/lottery-battle/`，待 TODO 15 部署後驗證）
+- [x] AC-04：Given 部署在 `/lottery-battle/`，When 直接開啟網址，Then 資源全部正常載入。（2026-10-06 部署後確認）

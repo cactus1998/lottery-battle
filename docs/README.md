@@ -21,3 +21,4 @@
 | [PRD-classes.md](PRD-classes.md)                 | 16 職業         | 完成   |
 | [PRD-overtime.md](PRD-overtime.md)               | 17 延長賽       | 完成   |
 | [PRD-pixel-sprites.md](PRD-pixel-sprites.md)     | 18 像素小人偶   | 完成   |
+| [PRD-deploy.md](PRD-deploy.md)                   | 15 部署         | 完成   |
