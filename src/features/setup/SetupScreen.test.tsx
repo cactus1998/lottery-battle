@@ -12,7 +12,7 @@ describe('SetupScreen', () => {
 
   it('shows the entrant count for the default range', () => {
     render(<SetupScreen />)
-    expect(screen.getByText('共 30 位參加者')).toBeInTheDocument()
+    expect(screen.getByText('共 30 位參加者，取 1 名')).toBeInTheDocument()
   })
 
   it('starts a battle with the parsed range, exclusions and seed', async () => {
@@ -39,19 +39,71 @@ describe('SetupScreen', () => {
     expect(start).toBeDisabled()
     await user.type(screen.getByLabelText(/參加名單/), '小明{enter}小華')
     expect(start).toBeEnabled()
-    expect(screen.getByText('共 2 位參加者')).toBeInTheDocument()
+    expect(screen.getByText('共 2 位參加者，取 1 名')).toBeInTheDocument()
   })
 
-  it('blocks winners >= entrants', async () => {
+  it('uses one prize per rank and sets winners to the prize count', async () => {
+    const user = userEvent.setup()
+    render(<SetupScreen />)
+    const first = screen.getByLabelText('第 1 名')
+    await user.clear(first)
+    await user.type(first, 'Switch')
+    await user.click(screen.getByRole('button', { name: '＋ 新增獎品' }))
+    await user.type(screen.getByLabelText('第 2 名'), '禮券')
+    expect(screen.getByText('共 30 位參加者，取 2 名')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '開打！' }))
+    expect(useAppStore.getState().battle?.settings).toEqual({
+      winners: 2,
+      prizes: ['Switch', '禮券'],
+    })
+  })
+
+  it('focuses the new prize input and adds a row on Enter', async () => {
+    const user = userEvent.setup()
+    render(<SetupScreen />)
+    await user.click(screen.getByRole('button', { name: '＋ 新增獎品' }))
+    expect(screen.getByLabelText('第 2 名')).toHaveFocus()
+    await user.keyboard('禮券{Enter}')
+    expect(screen.getByLabelText('第 3 名')).toHaveFocus()
+    expect(useAppStore.getState().phase).toBe('setup')
+  })
+
+  it('blocks empty prize names', async () => {
+    const user = userEvent.setup()
+    render(<SetupScreen />)
+    await user.click(screen.getByRole('button', { name: '＋ 新增獎品' }))
+    expect(screen.getByText('第 2 名的獎品還沒填')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '開打！' })).toBeDisabled()
+  })
+
+  it('allows at most 10 prizes and keeps at least one', async () => {
+    const user = userEvent.setup()
+    render(<SetupScreen />)
+    expect(screen.getByRole('button', { name: '刪除第 1 名的獎品' })).toBeDisabled()
+    const add = screen.getByRole('button', { name: '＋ 新增獎品' })
+    for (let i = 0; i < 12; i++) await user.click(add)
+    expect(screen.getAllByRole('button', { name: /刪除第 \d+ 名的獎品/ })).toHaveLength(10)
+    expect(add).toBeDisabled()
+  })
+
+  it('removes the right prize row', async () => {
+    const user = userEvent.setup()
+    render(<SetupScreen />)
+    await user.click(screen.getByRole('button', { name: '＋ 新增獎品' }))
+    await user.type(screen.getByLabelText('第 2 名'), '禮券')
+    await user.click(screen.getByRole('button', { name: '刪除第 1 名的獎品' }))
+    expect(screen.getByLabelText('第 1 名')).toHaveValue('禮券')
+  })
+
+  it('blocks prize count >= entrants', async () => {
     const user = userEvent.setup()
     render(<SetupScreen />)
     const end = screen.getByLabelText('結束號碼')
     await user.clear(end)
-    await user.type(end, '3')
-    const winners = screen.getByLabelText('得獎人數')
-    await user.clear(winners)
-    await user.type(winners, '3')
-    expect(screen.getByText('得獎人數需介於 1 到 2')).toBeInTheDocument()
+    await user.type(end, '2')
+    await user.click(screen.getByRole('button', { name: '＋ 新增獎品' }))
+    await user.type(screen.getByLabelText('第 2 名'), '禮券')
+    expect(screen.getByText('獎品有 2 個，參加者至少要 3 位')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '開打！' })).toBeDisabled()
   })
 

@@ -137,6 +137,7 @@ export function getResult(world: World): BattleResult {
     id: u.id,
     label: u.label,
     classId: u.classId,
+    hue: u.hue,
     kills: u.kills,
     damageDealt: Math.round(u.damageDealt),
     survivedSec: u.alive ? durationSec : u.deathTick * DT,

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/Button'
+import { prizeForRank } from '@/lib/prizes'
 import { useAppStore } from '@/store/appStore'
 import styles from './HistoryPanel.module.css'
 
@@ -58,7 +59,15 @@ export function HistoryPanel() {
                 </span>
                 <span className={styles.seed}>seed {entry.seed}</span>
               </div>
-              <div className={styles.winners}>🏆 {entry.winners.join('、')}</div>
+              <div className={styles.winners}>
+                🏆{' '}
+                {entry.winners
+                  .map((name, i) => {
+                    const prize = prizeForRank(entry.settings, i + 1)
+                    return prize ? `${name}（${prize}）` : name
+                  })
+                  .join('、')}
+              </div>
               <Button
                 onClick={() => replayHistory(entry)}
                 aria-label={`重播 ${dateFormat.format(entry.finishedAt)} 的對戰`}

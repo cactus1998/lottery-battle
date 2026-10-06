@@ -51,3 +51,19 @@ describe('ResultScreen', () => {
     expect(await screen.findByText('已複製到剪貼簿')).toBeInTheDocument()
   })
 })
+
+describe('ResultScreen with more than three winners', () => {
+  it('lists winners ranked 4th and below under the podium', () => {
+    const many = stepUntilEnd(
+      createWorld({
+        entrants: Array.from({ length: 12 }, (_, i) => ({ id: i, label: `Q${i + 1}` })),
+        settings: { winners: 5 },
+        seed: 3,
+      }),
+    )
+    render(<ResultScreen result={many} />)
+    const others = screen.getByRole('heading', { name: '其他得獎者' })
+      .nextElementSibling as HTMLElement
+    expect(within(others).getAllByRole('listitem')).toHaveLength(2)
+  })
+})

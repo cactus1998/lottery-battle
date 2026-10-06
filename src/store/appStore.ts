@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { MAX_WINNERS } from '@/engine/config'
 import { randomSeed } from '@/engine/rng'
 import type { BattleConfig, BattleResult, BattleSettings } from '@/engine/types'
 import type { Speed } from '@/game/GameController'
@@ -12,8 +13,15 @@ export interface SetupDraft {
   rangeEnd: string
   exclude: string
   listText: string
-  winners: number
+  /** 一個名次一個獎品，獎品數量 = 得獎人數 */
+  prizes: PrizeDraft[]
   seedText: string
+}
+
+export interface PrizeDraft {
+  /** 穩定的 key，刪除中間某一列時不會讓其他輸入框錯位 */
+  id: number
+  name: string
 }
 
 export interface HistoryEntry {
@@ -38,6 +46,8 @@ export interface ActiveBattle extends BattleConfig {
 }
 
 export const HISTORY_LIMIT = 20
+/** 獎品最多 10 種，與得獎人數上限相同 */
+export const MAX_PRIZES = MAX_WINNERS
 const HISTORY_KEY = 'history'
 const HISTORY_VERSION = 1
 const PREFS_KEY = 'prefs'
@@ -49,7 +59,7 @@ const DEFAULT_DRAFT: SetupDraft = {
   rangeEnd: '30',
   exclude: '',
   listText: '',
-  winners: 1,
+  prizes: [{ id: 1, name: '頭獎' }],
   seedText: '',
 }
 
@@ -90,6 +100,9 @@ interface AppState {
   prefs: Prefs
 
   updateDraft: (patch: Partial<SetupDraft>) => void
+  addPrize: () => void
+  updatePrize: (id: number, name: string) => void
+  removePrize: (id: number) => void
   startBattle: (config: BattleConfig) => void
   finishBattle: (result: BattleResult) => void
   /** 同 seed 重播，結果會完全相同 */
@@ -112,6 +125,27 @@ export const useAppStore = create<AppState>()((set, get) => ({
   prefs: loadStored(PREFS_KEY, PREFS_VERSION, DEFAULT_PREFS, isPrefs),
 
   updateDraft: (patch) => set((s) => ({ draft: { ...s.draft, ...patch } })),
+
+  addPrize: () =>
+    set((s) => {
+      if (s.draft.prizes.length >= MAX_PRIZES) return s
+      const id = Math.max(0, ...s.draft.prizes.map((p) => p.id)) + 1
+      return { draft: { ...s.draft, prizes: [...s.draft.prizes, { id, name: '' }] } }
+    }),
+
+  updatePrize: (id, name) =>
+    set((s) => ({
+      draft: {
+        ...s.draft,
+        prizes: s.draft.prizes.map((p) => (p.id === id ? { ...p, name } : p)),
+      },
+    })),
+
+  removePrize: (id) =>
+    set((s) => {
+      if (s.draft.prizes.length <= 1) return s
+      return { draft: { ...s.draft, prizes: s.draft.prizes.filter((p) => p.id !== id) } }
+    }),
 
   startBattle: (config) =>
     set((s) => ({

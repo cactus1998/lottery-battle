@@ -1,11 +1,12 @@
 import type { FormEvent } from 'react'
 import { Button } from '@/components/Button'
-import { MAX_ENTRANTS, MAX_WINNERS } from '@/engine/config'
+import { MAX_ENTRANTS } from '@/engine/config'
 import { randomSeed } from '@/engine/rng'
 import { useFocusOnMount } from '@/hooks/useFocusOnMount'
 import { parseList, parseRange, parseSeed } from '@/lib/entrants'
 import { useAppStore } from '@/store/appStore'
 import { ClassGuide } from './ClassGuide'
+import { PrizeEditor } from './PrizeEditor'
 import styles from './SetupScreen.module.css'
 
 export function SetupScreen() {
@@ -20,12 +21,16 @@ export function SetupScreen() {
       ? parseRange(draft.rangeStart, draft.rangeEnd, draft.exclude)
       : parseList(draft.listText)
   const count = parsed.entrants.length
-  const maxWinners = Math.max(1, Math.min(MAX_WINNERS, count - 1))
   const seed = parseSeed(draft.seedText)
 
   const errors = [...parsed.errors]
-  if (count > 0 && (draft.winners < 1 || draft.winners > maxWinners)) {
-    errors.push(`得獎人數需介於 1 到 ${maxWinners}`)
+  const prizeNames = draft.prizes.map((p) => p.name.trim())
+  const winners = prizeNames.length
+  prizeNames.forEach((name, i) => {
+    if (!name) errors.push(`第 ${i + 1} 名的獎品還沒填`)
+  })
+  if (count > 0 && winners >= count) {
+    errors.push(`獎品有 ${winners} 個，參加者至少要 ${winners + 1} 位`)
   }
   if (Number.isNaN(seed)) errors.push('seed 必須是 0 – 4294967295 的整數')
   const canStart = count > 0 && errors.length === 0
@@ -35,7 +40,7 @@ export function SetupScreen() {
     if (!canStart) return
     startBattle({
       entrants: parsed.entrants,
-      settings: { winners: draft.winners },
+      settings: { winners, prizes: prizeNames },
       seed: seed ?? randomSeed(),
     })
   }
@@ -115,32 +120,21 @@ export function SetupScreen() {
           </label>
         )}
 
-        <div className={styles.rangeGrid}>
-          <label className={styles.field}>
-            <span>得獎人數</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={maxWinners}
-              value={draft.winners}
-              onChange={(e) => updateDraft({ winners: Math.trunc(Number(e.target.value)) })}
-            />
-          </label>
-          <label className={styles.field}>
-            <span>seed（選填，同 seed 可重現結果）</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="留空自動產生"
-              value={draft.seedText}
-              onChange={(e) => updateDraft({ seedText: e.target.value })}
-            />
-          </label>
-        </div>
+        <PrizeEditor />
+
+        <label className={styles.field}>
+          <span>seed（選填，同 seed 可重現結果）</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="留空自動產生"
+            value={draft.seedText}
+            onChange={(e) => updateDraft({ seedText: e.target.value })}
+          />
+        </label>
 
         <div className={styles.summary} aria-live="polite">
-          <strong>{count > 0 ? `共 ${count} 位參加者` : '尚未有參加者'}</strong>
+          <strong>{count > 0 ? `共 ${count} 位參加者，取 ${winners} 名` : '尚未有參加者'}</strong>
           {errors.length > 0 && (
             <ul className={styles.errors}>
               {errors.map((msg) => (

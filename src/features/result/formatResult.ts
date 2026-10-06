@@ -1,5 +1,6 @@
 import { CLASSES } from '@/engine/classes'
 import type { BattleResult } from '@/engine/types'
+import { prizeForRank } from '@/lib/prizes'
 
 export function formatDuration(sec: number): string {
   return `${sec.toFixed(1)} 秒`
@@ -10,9 +11,11 @@ export function formatResultText(result: BattleResult): string {
   const winners = result.ranking.filter((r) => r.winner)
   const lines = [
     `抽獎大亂鬥結果（${result.total} 人取 ${result.settings.winners} 名，seed ${result.seed}）`,
-    ...winners.map(
-      (r) => `第 ${r.rank} 名：${r.label}（${CLASSES[r.classId].name}，${r.kills} 殺）`,
-    ),
+    ...winners.map((r) => {
+      const prize = prizeForRank(result.settings, r.rank)
+      const line = `第 ${r.rank} 名：${r.label}（${CLASSES[r.classId].name}，${r.kills} 殺）`
+      return prize ? `${line} 🎁 ${prize}` : line
+    }),
     `對戰時間 ${formatDuration(result.durationSec)}`,
   ]
   return lines.join('\n')

@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { Button } from '@/components/Button'
 import { ClassIcon } from '@/components/ClassIcon'
+import { ClassPortrait } from '@/components/ClassPortrait'
 import { CLASSES } from '@/engine/classes'
 import type { BattleResult } from '@/engine/types'
 import { useFocusOnMount } from '@/hooks/useFocusOnMount'
+import { prizeForRank } from '@/lib/prizes'
 import { useAppStore } from '@/store/appStore'
 import { formatDuration, formatResultText } from './formatResult'
+import { Podium } from './Podium'
 import styles from './ResultScreen.module.css'
 
 type ResultScreenProps = {
@@ -13,8 +16,6 @@ type ResultScreenProps = {
 }
 
 type CopyState = 'idle' | 'copied' | 'failed'
-
-const MEDALS = ['🥇', '🥈', '🥉']
 
 export function ResultScreen({ result }: ResultScreenProps) {
   const replay = useAppStore((s) => s.replay)
@@ -24,6 +25,9 @@ export function ResultScreen({ result }: ResultScreenProps) {
   const [copyState, setCopyState] = useState<CopyState>('idle')
 
   const winners = result.ranking.filter((r) => r.winner)
+  // 前三名在頒獎台上，得獎人數超過 3 時其餘列在下方
+  const otherWinners = winners.filter((w) => w.rank > 3)
+  const hasPrizes = winners.some((w) => prizeForRank(result.settings, w.rank))
   const killKing = result.ranking.reduce((best, r) => (r.kills > best.kills ? r : best))
   const firstOut = result.ranking.at(-1)
 
@@ -54,23 +58,28 @@ export function ResultScreen({ result }: ResultScreenProps) {
         得獎者：{winners.map((w) => w.label).join('、')}
       </p>
 
-      <ol className={styles.podium}>
-        {winners.map((w, i) => (
-          <li key={w.id} className={`${styles.winner} ${i === 0 ? styles.champion : ''}`}>
-            <span className={styles.medal} aria-hidden="true">
-              {MEDALS[i] ?? '🏅'}
-            </span>
-            <span className={styles.rank}>第 {w.rank} 名</span>
-            <span className={styles.label}>{w.label}</span>
-            <span className={styles.className}>
-              <ClassIcon classId={w.classId} /> {CLASSES[w.classId].name}
-            </span>
-            <span className={styles.detail}>
-              {w.kills} 殺 · {w.damageDealt} 傷害
-            </span>
-          </li>
-        ))}
-      </ol>
+      <Podium ranking={result.ranking} settings={result.settings} />
+
+      {otherWinners.length > 0 && (
+        <section className={styles.others} aria-labelledby="other-winners-title">
+          <h2 id="other-winners-title">其他得獎者</h2>
+          <ol className={styles.otherList}>
+            {otherWinners.map((w) => (
+              <li key={w.id}>
+                <span className={styles.otherRank}>{w.rank}</span>
+                <ClassPortrait classId={w.classId} hue={w.hue} scale={2} />
+                <span className={styles.otherName}>{w.label}</span>
+                {prizeForRank(result.settings, w.rank) && (
+                  <span className={styles.prize}>🎁 {prizeForRank(result.settings, w.rank)}</span>
+                )}
+                <span className={styles.detail}>
+                  <ClassIcon classId={w.classId} /> {w.kills} 殺
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       <ul className={styles.trivia}>
         {killKing.kills > 0 && (
@@ -115,7 +124,14 @@ export function ResultScreen({ result }: ResultScreenProps) {
               <tr>
                 <th scope="col">名次</th>
                 <th scope="col">名稱</th>
-                <th scope="col">職業</th>
+                <th scope="col" className={styles.classCell}>
+                  職業
+                </th>
+                {hasPrizes && (
+                  <th scope="col" className={styles.prizeCell}>
+                    獎品
+                  </th>
+                )}
                 <th scope="col">擊殺</th>
                 <th scope="col">傷害</th>
                 <th scope="col">存活</th>
@@ -129,6 +145,11 @@ export function ResultScreen({ result }: ResultScreenProps) {
                   <td className={styles.classCell}>
                     <ClassIcon classId={r.classId} /> {CLASSES[r.classId].name}
                   </td>
+                  {hasPrizes && (
+                    <td className={styles.prizeCell}>
+                      {prizeForRank(result.settings, r.rank) ?? ''}
+                    </td>
+                  )}
                   <td>{r.kills}</td>
                   <td>{r.damageDealt}</td>
                   <td>{formatDuration(r.survivedSec)}</td>

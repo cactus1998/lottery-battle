@@ -11,6 +11,8 @@ export interface Entrant {
 export interface BattleSettings {
   /** 存活人數降到這個數字時對戰結束 */
   winners: number
+  /** 依名次的獎品名稱（第 i 個給第 i + 1 名）。只供畫面顯示，引擎不使用 */
+  prizes?: string[]
 }
 
 export interface BattleConfig {
@@ -110,6 +112,8 @@ export interface RankingRow {
   id: number
   label: string
   classId: ClassId
+  /** 小人偶衣服色相，結果頁畫小人偶用 */
+  hue: number
   kills: number
   damageDealt: number
   /** 存活秒數（得獎者為整場時長） */
