@@ -110,7 +110,6 @@ interface AppState {
   /** 同名單、新 seed 再開一場 */
   rematch: () => void
   backToSetup: () => void
-  replayHistory: (entry: HistoryEntry) => void
   clearHistory: () => void
   setPrefs: (patch: Partial<Prefs>) => void
 }
@@ -193,19 +192,6 @@ export const useAppStore = create<AppState>()((set, get) => ({
   },
 
   backToSetup: () => set({ phase: 'setup', result: null }),
-
-  replayHistory: (entry) =>
-    set((s) => ({
-      phase: 'battle',
-      battle: {
-        entrants: entry.entrants.map((label, id) => ({ id, label })),
-        settings: entry.settings,
-        seed: entry.seed,
-        replay: true,
-      },
-      battleKey: s.battleKey + 1,
-      result: null,
-    })),
 
   clearHistory: () => {
     removeStored(HISTORY_KEY)

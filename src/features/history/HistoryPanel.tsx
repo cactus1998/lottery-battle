@@ -13,7 +13,6 @@ const dateFormat = new Intl.DateTimeFormat('zh-TW', {
 
 export function HistoryPanel() {
   const history = useAppStore((s) => s.history)
-  const replayHistory = useAppStore((s) => s.replayHistory)
   const clearHistory = useAppStore((s) => s.clearHistory)
   // 兩段式確認，不用 window.confirm
   const [confirming, setConfirming] = useState(false)
@@ -68,12 +67,6 @@ export function HistoryPanel() {
                   })
                   .join('、')}
               </div>
-              <Button
-                onClick={() => replayHistory(entry)}
-                aria-label={`重播 ${dateFormat.format(entry.finishedAt)} 的對戰`}
-              >
-                重播
-              </Button>
             </li>
           ))}
         </ul>
