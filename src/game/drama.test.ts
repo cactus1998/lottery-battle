@@ -16,14 +16,14 @@ describe('dramaLevel', () => {
     expect(dramaLevel(world(10, 1))).toBe('none')
   })
 
-  it('becomes final when winners + 2 remain', () => {
+  it('becomes final when 3 remain', () => {
     const w = world(10, 1)
     for (let i = 0; i < 7; i++) killUnit(w, i, null)
     expect(w.aliveCount).toBe(3)
     expect(dramaLevel(w)).toBe('final')
   })
 
-  it('becomes matchPoint when one kill away and someone is low on HP', () => {
+  it('becomes matchPoint when 2 remain and someone is low on HP', () => {
     const w = world(10, 1)
     for (let i = 0; i < 8; i++) killUnit(w, i, null)
     expect(dramaLevel(w)).toBe('final')

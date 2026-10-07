@@ -95,7 +95,7 @@ describe('SetupScreen', () => {
     expect(screen.getByLabelText('第 1 名')).toHaveValue('禮券')
   })
 
-  it('blocks prize count >= entrants', async () => {
+  it('blocks prize count > entrants', async () => {
     const user = userEvent.setup()
     render(<SetupScreen />)
     const end = screen.getByLabelText('結束號碼')
@@ -103,7 +103,11 @@ describe('SetupScreen', () => {
     await user.type(end, '2')
     await user.click(screen.getByRole('button', { name: '＋ 新增獎品' }))
     await user.type(screen.getByLabelText('第 2 名'), '禮券')
-    expect(screen.getByText('獎品有 2 個，參加者至少要 3 位')).toBeInTheDocument()
+    // 獎品數等於人數可以開打
+    expect(screen.getByRole('button', { name: '開打！' })).toBeEnabled()
+    await user.click(screen.getByRole('button', { name: '＋ 新增獎品' }))
+    await user.type(screen.getByLabelText('第 3 名'), '貼紙')
+    expect(screen.getByText('獎品有 3 個，參加者至少要 3 位')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '開打！' })).toBeDisabled()
   })
 

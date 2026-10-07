@@ -80,7 +80,7 @@ export function createWorld({ entrants, settings, seed }: BattleConfig): World {
     units,
     projectiles: [],
     aliveCount: units.length,
-    finished: units.length <= settings.winners,
+    finished: units.length <= 1,
     damageMultiplier: 1,
     deathOrder: [],
     events: [],
@@ -114,7 +114,7 @@ export function step(world: World): void {
   if (world.tick >= CONFIG.maxTicks) forceFinish(world)
 }
 
-/** 安全網：超過 maxTicks 時依 HP 由低到高淘汰，直到剩下得獎人數。 */
+/** 安全網：超過 maxTicks 時依 HP 由低到高淘汰，直到剩下一人。 */
 function forceFinish(world: World): void {
   const alive = world.units.filter((u) => u.alive).sort((a, b) => a.hp - b.hp || b.id - a.id)
   for (const u of alive) {
@@ -131,9 +131,8 @@ export function stepUntilEnd(world: World): BattleResult {
 
 export function getResult(world: World): BattleResult {
   const durationSec = world.tick * DT
-  const survivors = world.units
-    .filter((u) => u.alive)
-    .sort((a, b) => b.hp - a.hp || b.kills - a.kills || a.id - b.id)
+  // 名次 = 存活順序：最後存活者第 1 名，越晚倒下名次越前
+  const survivors = world.units.filter((u) => u.alive)
   const fallen = [...world.deathOrder].reverse().map((i) => world.units[i] as Unit)
 
   const ranking: RankingRow[] = [...survivors, ...fallen].map((u, i) => ({
@@ -145,7 +144,7 @@ export function getResult(world: World): BattleResult {
     kills: u.kills,
     damageDealt: Math.round(u.damageDealt),
     survivedSec: u.alive ? durationSec : u.deathTick * DT,
-    winner: u.alive,
+    winner: i < world.settings.winners,
   }))
 
   return {

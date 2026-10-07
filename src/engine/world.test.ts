@@ -84,8 +84,17 @@ describe('stepUntilEnd', () => {
     expect(kills).toBeGreaterThan(0)
   })
 
-  it('does nothing when winners >= entrants', () => {
-    const world = createWorld(config(3, 3))
+  it('fights down to a single survivor regardless of prize count', () => {
+    const world = createWorld(config(30, 4, 7))
+    const result = stepUntilEnd(world)
+    expect(world.aliveCount).toBe(1)
+    expect(result.ranking.filter((r) => r.winner).map((r) => r.rank)).toEqual([1, 2, 3, 4])
+    // 第 2 名是最後倒下的人
+    expect(result.ranking[1]!.id).toBe(world.deathOrder.at(-1))
+  })
+
+  it('does nothing with a single entrant', () => {
+    const world = createWorld(config(1, 1))
     expect(world.finished).toBe(true)
     step(world)
     expect(world.tick).toBe(0)

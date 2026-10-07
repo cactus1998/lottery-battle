@@ -9,7 +9,7 @@ export interface Entrant {
 }
 
 export interface BattleSettings {
-  /** 存活人數降到這個數字時對戰結束 */
+  /** 得獎名額：名次前幾名得獎。對戰一律打到剩一人，不影響結束時機 */
   winners: number
   /** 依名次的獎品名稱（第 i 個給第 i + 1 名）。只供畫面顯示，引擎不使用 */
   prizes?: string[]

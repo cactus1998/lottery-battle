@@ -146,8 +146,8 @@ describe('GameController', () => {
   it('slows the simulation down during the final showdown', () => {
     const normal = makeController().controller
     const showdown = makeController().controller
-    // 只剩得獎人數 + 2 人：進入決戰時刻
-    for (let i = 0; i < 8; i++) killUnit(showdown.world, i, null)
+    // 只剩 3 人：進入決戰時刻
+    for (let i = 0; i < 9; i++) killUnit(showdown.world, i, null)
     normal.start()
     showdown.start()
     const t0 = normal.world.tick

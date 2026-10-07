@@ -2,7 +2,7 @@ import type { World } from '../types'
 
 /**
  * 淘汰一個小人並檢查勝負。回傳 true 表示對戰已結束，呼叫端應立即停止本 tick 的處理，
- * 確保存活人數不會低於得獎人數。
+ * 確保最後一定剩下一位存活者（冠軍）。
  */
 export function killUnit(world: World, victim: number, killer: number | null): boolean {
   const unit = world.units[victim]
@@ -19,7 +19,7 @@ export function killUnit(world: World, victim: number, killer: number | null): b
   }
   world.events.push({ type: 'kill', tick: world.tick, killer, victim })
 
-  if (world.aliveCount <= world.settings.winners) {
+  if (world.aliveCount <= 1) {
     world.finished = true
     world.events.push({ type: 'finish', tick: world.tick })
   }

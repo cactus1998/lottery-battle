@@ -17,8 +17,8 @@ it('produces the recorded ranking for seed 20261006', () => {
     .toMatchInlineSnapshot(`
       {
         "order": [
-          "10:knight",
           "8:assassin",
+          "10:knight",
           "12:knight",
           "2:swordsman",
           "6:assassin",
@@ -34,7 +34,7 @@ it('produces the recorded ranking for seed 20261006', () => {
           "5:mage",
           "9:archer",
         ],
-        "ticks": 1178,
+        "ticks": 1402,
       }
     `)
 })

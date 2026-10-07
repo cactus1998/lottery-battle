@@ -29,8 +29,8 @@ export function SetupScreen() {
   prizeNames.forEach((name, i) => {
     if (!name) errors.push(`第 ${i + 1} 名的獎品還沒填`)
   })
-  if (count > 0 && winners >= count) {
-    errors.push(`獎品有 ${winners} 個，參加者至少要 ${winners + 1} 位`)
+  if (count > 0 && winners > count) {
+    errors.push(`獎品有 ${winners} 個，參加者至少要 ${winners} 位`)
   }
   if (Number.isNaN(seed)) errors.push('seed 必須是 0 – 4294967295 的整數')
   const canStart = count > 0 && errors.length === 0
