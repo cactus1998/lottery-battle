@@ -1,5 +1,13 @@
 # 抽獎大亂鬥（lottery-battle）
 
+![Static Badge](https://img.shields.io/badge/React%2019-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) 
+![Static Badge](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white) 
+![Static Badge](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white) 
+![Static Badge](https://img.shields.io/badge/Zustand-443E38?style=for-the-badge) 
+![Static Badge](https://img.shields.io/badge/Canvas%202D-E34F26?style=for-the-badge&logo=html5&logoColor=white) 
+![Static Badge](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white) 
+![Static Badge](https://img.shields.io/badge/Testing%20Library-E33332?style=for-the-badge&logo=testinglibrary&logoColor=white) 
+
 趣味抽獎：每個參加號碼是一個小人，在競技場自動混戰，最後存活的人得獎。同一個 seed 可以重播出完全相同的結果。
 
 - 技術：Vite、React 19、TypeScript、zustand、Canvas 2D、Vitest
